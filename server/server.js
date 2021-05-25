@@ -20,7 +20,7 @@ mongoose
     //     console.error('Connection error', e.message)
     // })
 
-//Middleware
+// ------------------ START OF MIDDLEWARE ---------------------
 app.use(express.json(true))
 app.use(express.urlencoded({extended:true}))
 app.use(cors({
@@ -36,9 +36,24 @@ app.use(session({
 
 app.use(cookieParser("secretcode"))
 
-//Routes
-app.post("/login", (req, res) => {
-    console.log(req.body);
+app.use(passport.initialize())
+app.use(passport.session());
+require('./passportConfig')(passport);
+// --------------------- END OF MIDDLEWARE --------------------
+
+// ------------------ START OF ROUTES ---------------------
+app.post("/login", (req, res, next) => {
+    passport.authenticate("local", (err, user, info) => {
+        if(err) throw err;
+        if(!user) res.send("No user exists")
+        else {
+            req.login(user, err => {
+                if (err) throw err;
+                res.send("Successfully Authenticated")
+                console.log(req.user);
+            })
+        }
+    })(req,res,next)
 })
 
 app.post("/register", (req, res) => {
@@ -58,10 +73,12 @@ app.post("/register", (req, res) => {
     })
 })
 
-app.get("/user", (req, res) => {
-    console.log(req.body);
+app.get("/getUser", (req, res) => {
+    res.send(req.user) //The req.user stores the entire user that has been authenticated inside of it.
 })
 
+// ------------------ END OF ROUTES ---------------------
+// ------------------ START SERVER ---------------------
 app.listen(4000, () => {
     console.log("Server listening on port 4000")
 })
